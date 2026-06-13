@@ -6,7 +6,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends bash ca-certifi
 RUN /usr/sbin/groupadd --gid 10001 hermes && /usr/sbin/useradd --uid 10001 --gid 10001 --create-home --home-dir /home/hermes --shell /bin/bash hermes
 WORKDIR /home/hermes
 RUN curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
-RUN HERMES_PY="$(head -n 1 /home/hermes/.local/bin/hermes | cut -c3-)" && "$HERMES_PY" -m pip install "python-telegram-bot>=21,<22"
+RUN python3 - <<'PY'
+import glob, os, subprocess, sys
+patterns = [
+    '/root/.local/**/bin/python',
+    '/home/hermes/.local/**/bin/python',
+    '/usr/local/**/bin/python',
+    '/opt/**/bin/python',
+]
+candidates = [sys.executable]
+for pattern in patterns:
+    candidates.extend(glob.glob(pattern, recursive=True))
+seen = []
+for py in candidates:
+    if py in seen or not os.path.exists(py):
+        continue
+    seen.append(py)
+    try:
+        print('installing telegram dependency into', py, flush=True)
+        subprocess.run([py, '-m', 'pip', 'install', 'python-telegram-bot>=21,<22'], check=False, timeout=120)
+    except Exception as exc:
+        print('skipped', py, type(exc).__name__, flush=True)
+print('telegram dependency install scan complete', len(seen), 'python interpreters checked', flush=True)
+PY
 RUN chown -R hermes:hermes /home/hermes
 COPY --chown=hermes:hermes entrypoint.sh /usr/local/bin/hermes-cloud-entrypoint.sh
 COPY --chown=hermes:hermes health_server.py /usr/local/bin/hermes-health-server.py
