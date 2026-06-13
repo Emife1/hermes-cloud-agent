@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends bash ca-certifi
 RUN /usr/sbin/groupadd --gid 10001 hermes && /usr/sbin/useradd --uid 10001 --gid 10001 --create-home --home-dir /home/hermes --shell /bin/bash hermes
 WORKDIR /home/hermes
 RUN curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+RUN chown -R hermes:hermes /home/hermes
 COPY --chown=hermes:hermes entrypoint.sh /usr/local/bin/hermes-cloud-entrypoint.sh
 COPY --chown=hermes:hermes health_server.py /usr/local/bin/hermes-health-server.py
 RUN chmod +x /usr/local/bin/hermes-cloud-entrypoint.sh
