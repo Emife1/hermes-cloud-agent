@@ -2,7 +2,7 @@
 set -euo pipefail
 
 export HOME="${HOME:-/home/hermes}"
-export PATH="$HOME/.local/bin:/root/.local/bin:/usr/local/bin:/usr/bin:/bin"
+export PATH="$HOME/.local/bin:/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 mkdir -p "$HOME/.hermes"
 
@@ -30,9 +30,16 @@ if [ -z "${OPENROUTER_API_KEY:-}" ] && \
    [ -z "${ANTHROPIC_API_KEY:-}" ] && \
    [ -z "${GOOGLE_API_KEY:-}" ]; then
   echo "ERROR: no supported model provider API key is set." >&2
-  echo "Set at least one of OPENROUTER_API_KEY, KIMI_API_KEY, NVIDIA_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_API_KEY." >&2
   exit 1
 fi
 
+python3 /usr/local/bin/hermes-health-server.py &
+HEALTH_PID="$!"
+
 echo "Starting Hermes gateway..."
-exec hermes gateway
+hermes gateway &
+HERMES_PID="$!"
+
+trap 'kill "$HEALTH_PID" "$HERMES_PID" 2>/dev/null || true' INT TERM EXIT
+
+wait "$HERMES_PID"
