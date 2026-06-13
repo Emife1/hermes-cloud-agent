@@ -1,0 +1,15 @@
+model:
+  default: openai/gpt-oss-120b
+  provider: nvidia
+  base_url: https://integrate.api.nvidia.com/v1
+fallback_model:
+  provider: nvidia
+  model: nvidia/nemotron-3-super-120b-a12b
+platform_toolsets:
+  telegram:
+    - hermes-telegram
+telegram:
+  reactions: false
+  channel_prompts: {}
+  allowed_chats: ''
+_config_version: 27
