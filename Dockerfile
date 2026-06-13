@@ -39,6 +39,7 @@ RUN curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 USER root
 
 COPY --chown=hermes:hermes entrypoint.sh /usr/local/bin/hermes-cloud-entrypoint.sh
+COPY --chown=hermes:hermes health_server.py /usr/local/bin/hermes-health-server.py
 
 RUN chmod +x /usr/local/bin/hermes-cloud-entrypoint.sh
 
