@@ -26,7 +26,6 @@ done
 if [ -z "${NVIDIA_API_KEY:-}" ] && \
    [ -z "${OPENROUTER_API_KEY:-}" ] && \
    [ -z "${KIMI_API_KEY:-}" ] && \
-   [ -z "${OPENAI_API_KEY:-}" ] && \
    [ -z "${ANTHROPIC_API_KEY:-}" ] && \
    [ -z "${GOOGLE_API_KEY:-}" ]; then
   echo "ERROR: no supported model provider API key is set." >&2
@@ -53,21 +52,22 @@ write_env_if_set HERMES_MODEL
 
 write_env_if_set OPENROUTER_API_KEY
 write_env_if_set OPENROUTER_BASE_URL
+
 write_env_if_set KIMI_API_KEY
 write_env_if_set KIMI_BASE_URL
+
 write_env_if_set OPENAI_API_KEY
 write_env_if_set OPENAI_BASE_URL
-write_env_if_set OPENAI_MODEL
+
 write_env_if_set ANTHROPIC_API_KEY
 write_env_if_set GOOGLE_API_KEY
 
-write_env_if_set DEFAULT_MODEL
-write_env_if_set HERMES_DEFAULT_MODEL
+# removed DEFAULT_MODEL override to prevent conflicting model injection
 
-chmod 600 "$HOME/.hermes/.env"
+# fallback model must be controlled via Render env / config only
 
 echo "Hermes runtime env file prepared at $HOME/.hermes/.env"
-echo "Hermes runtime env keys present: $(grep -c '^[A-Z_].*=' "$HOME/.hermes/.env" || true)"
+echo "Hermes runtime env keys present: $(grep -c '^[A-Z]' "$HOME/.hermes/.env" || true)"
 
 python3 /usr/local/bin/hermes-health-server.py &
 HEALTH_PID="$!"
