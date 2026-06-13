@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends bash ca-certifi
 RUN /usr/sbin/groupadd --gid 10001 hermes && /usr/sbin/useradd --uid 10001 --gid 10001 --create-home --home-dir /home/hermes --shell /bin/bash hermes
 WORKDIR /home/hermes
 RUN curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
-RUN /home/hermes/.local/share/uv/tools/hermes/bin/python -m pip install "python-telegram-bot>=21,<22"
+RUN HERMES_PY="$(head -n 1 /home/hermes/.local/bin/hermes | cut -c3-)" && "$HERMES_PY" -m pip install "python-telegram-bot>=21,<22"
 RUN chown -R hermes:hermes /home/hermes
 COPY --chown=hermes:hermes entrypoint.sh /usr/local/bin/hermes-cloud-entrypoint.sh
 COPY --chown=hermes:hermes health_server.py /usr/local/bin/hermes-health-server.py
