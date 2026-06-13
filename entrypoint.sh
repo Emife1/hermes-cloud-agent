@@ -23,14 +23,14 @@ for var_name in "${required_vars[@]}"; do
   fi
 done
 
-if [ -z "${OPENROUTER_API_KEY:-}" ] && \
+if [ -z "${NVIDIA_API_KEY:-}" ] && \
+   [ -z "${OPENROUTER_API_KEY:-}" ] && \
    [ -z "${KIMI_API_KEY:-}" ] && \
-   [ -z "${NVIDIA_API_KEY:-}" ] && \
    [ -z "${OPENAI_API_KEY:-}" ] && \
    [ -z "${ANTHROPIC_API_KEY:-}" ] && \
    [ -z "${GOOGLE_API_KEY:-}" ]; then
   echo "ERROR: no supported model provider API key is set." >&2
-  echo "Set at least one provider key in Render environment variables." >&2
+  echo "Set NVIDIA_API_KEY or another supported provider key in Render environment variables." >&2
   exit 1
 fi
 
@@ -46,14 +46,21 @@ umask 077
 
 write_env_if_set TELEGRAM_BOT_TOKEN
 write_env_if_set TELEGRAM_ALLOWED_USERS
-write_env_if_set OPENROUTER_API_KEY
-write_env_if_set KIMI_API_KEY
+
 write_env_if_set NVIDIA_API_KEY
+write_env_if_set NVIDIA_BASE_URL
+write_env_if_set HERMES_MODEL
+
+write_env_if_set OPENROUTER_API_KEY
+write_env_if_set OPENROUTER_BASE_URL
+write_env_if_set KIMI_API_KEY
+write_env_if_set KIMI_BASE_URL
 write_env_if_set OPENAI_API_KEY
-write_env_if_set ANTHROPIC_API_KEY
-write_env_if_set GOOGLE_API_KEY
 write_env_if_set OPENAI_BASE_URL
 write_env_if_set OPENAI_MODEL
+write_env_if_set ANTHROPIC_API_KEY
+write_env_if_set GOOGLE_API_KEY
+
 write_env_if_set DEFAULT_MODEL
 write_env_if_set HERMES_DEFAULT_MODEL
 
