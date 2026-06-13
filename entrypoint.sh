@@ -30,8 +30,37 @@ if [ -z "${OPENROUTER_API_KEY:-}" ] && \
    [ -z "${ANTHROPIC_API_KEY:-}" ] && \
    [ -z "${GOOGLE_API_KEY:-}" ]; then
   echo "ERROR: no supported model provider API key is set." >&2
+  echo "Set at least one provider key in Render environment variables." >&2
   exit 1
 fi
+
+write_env_if_set() {
+  local name="$1"
+  if [ -n "${!name:-}" ]; then
+    printf '%s=%s\n' "$name" "${!name}" >> "$HOME/.hermes/.env"
+  fi
+}
+
+umask 077
+: > "$HOME/.hermes/.env"
+
+write_env_if_set TELEGRAM_BOT_TOKEN
+write_env_if_set TELEGRAM_ALLOWED_USERS
+write_env_if_set OPENROUTER_API_KEY
+write_env_if_set KIMI_API_KEY
+write_env_if_set NVIDIA_API_KEY
+write_env_if_set OPENAI_API_KEY
+write_env_if_set ANTHROPIC_API_KEY
+write_env_if_set GOOGLE_API_KEY
+write_env_if_set OPENAI_BASE_URL
+write_env_if_set OPENAI_MODEL
+write_env_if_set DEFAULT_MODEL
+write_env_if_set HERMES_DEFAULT_MODEL
+
+chmod 600 "$HOME/.hermes/.env"
+
+echo "Hermes runtime env file prepared at $HOME/.hermes/.env"
+echo "Hermes runtime env keys present: $(grep -c '^[A-Z_].*=' "$HOME/.hermes/.env" || true)"
 
 python3 /usr/local/bin/hermes-health-server.py &
 HEALTH_PID="$!"
