@@ -6,10 +6,7 @@ export PATH="$HOME/.local/bin:/root/.local/bin:/usr/local/sbin:/usr/local/bin:/u
 
 mkdir -p "$HOME/.hermes"
 
-if ! command -v hermes >/dev/null 2>&1; then
-  echo "ERROR: hermes command not found" >&2
-  exit 1
-fi
+command -v hermes >/dev/null 2>&1 || exit 1
 
 : "${TELEGRAM_BOT_TOKEN:?}"
 : "${TELEGRAM_ALLOWED_USERS:?}"
@@ -18,16 +15,11 @@ fi
 umask 077
 : > "$HOME/.hermes/.env"
 
-cat >> "$HOME/.hermes/.env" <<EOF
-TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-TELEGRAM_ALLOWED_USERS=${TELEGRAM_ALLOWED_USERS}
-NVIDIA_API_KEY=${NVIDIA_API_KEY}
-NVIDIA_BASE_URL=${NVIDIA_BASE_URL:-https://integrate.api.nvidia.com/v1}
-HERMES_MODEL=${HERMES_MODEL:-openai/gpt-oss-120b}
-EOF
+printf '%s=%s\n' TELEGRAM_BOT_TOKEN "$TELEGRAM_BOT_TOKEN" >> "$HOME/.hermes/.env"
+printf '%s=%s\n' TELEGRAM_ALLOWED_USERS "$TELEGRAM_ALLOWED_USERS" >> "$HOME/.hermes/.env"
+printf '%s=%s\n' NVIDIA_API_KEY "$NVIDIA_API_KEY" >> "$HOME/.hermes/.env"
+printf '%s=%s\n' NVIDIA_BASE_URL "${NVIDIA_BASE_URL:-https://integrate.api.nvidia.com/v1}" >> "$HOME/.hermes/.env"
+printf '%s=%s\n' HERMES_MODEL "${HERMES_MODEL:-openai/gpt-oss-120b}" >> "$HOME/.hermes/.env"
 
-hermes gateway &
-PID=$!
-
-trap "kill $PID" INT TERM EXIT
-wait $PID
+# Start gateway bound to Render port
+exec hermes gateway --port "${PORT:-10000}"
