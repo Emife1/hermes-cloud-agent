@@ -2,7 +2,7 @@ FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV HOME=/home/hermes
-ENV PATH=/home/hermes/.local/bin:/root/.local/bin:/usr/local/bin:/usr/bin:/bin
+ENV PATH=/home/hermes/.local/bin:/root/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -22,8 +22,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
-RUN groupadd --gid 10001 hermes \
-    && useradd \
+RUN /usr/sbin/groupadd --gid 10001 hermes \
+    && /usr/sbin/useradd \
       --uid 10001 \
       --gid 10001 \
       --create-home \
