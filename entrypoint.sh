@@ -21,5 +21,17 @@ printf '%s=%s\n' NVIDIA_API_KEY "$NVIDIA_API_KEY" >> "$HOME/.hermes/.env"
 printf '%s=%s\n' NVIDIA_BASE_URL "${NVIDIA_BASE_URL:-https://integrate.api.nvidia.com/v1}" >> "$HOME/.hermes/.env"
 printf '%s=%s\n' HERMES_MODEL "${HERMES_MODEL:-openai/gpt-oss-120b}" >> "$HOME/.hermes/.env"
 
-# Start gateway bound to Render port
-exec hermes gateway --port "${PORT:-10000}"
+# Start a lightweight health server on Render's required PORT, then run Hermes gateway.
+# The Hermes CLI expects a gateway subcommand (run/start/etc.); passing PORT here
+# makes Render's value become an invalid gateway command. The health server owns
+# the Render web port while Hermes runs with its normal gateway defaults.
+python3 /usr/local/bin/hermes-health-server.py &
+HEALTH_PID="$!"
+
+echo "Starting Hermes gateway..."
+hermes gateway &
+HERMES_PID="$!"
+
+trap 'kill "$HEALTH_PID" "$HERMES_PID" 2>/dev/null || true' INT TERM EXIT
+
+wait "$HERMES_PID"
