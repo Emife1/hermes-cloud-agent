@@ -8,12 +8,7 @@ WORKDIR /home/hermes
 RUN curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 RUN python3 - <<'PY'
 import glob, os, subprocess, sys
-patterns = [
-    '/root/.local/**/bin/python',
-    '/home/hermes/.local/**/bin/python',
-    '/usr/local/**/bin/python',
-    '/opt/**/bin/python',
-]
+patterns = ['/root/.local/**/bin/python','/home/hermes/.local/**/bin/python','/usr/local/**/bin/python','/opt/**/bin/python']
 candidates = [sys.executable]
 for pattern in patterns:
     candidates.extend(glob.glob(pattern, recursive=True))
@@ -30,6 +25,7 @@ for py in candidates:
 print('telegram dependency install scan complete', len(seen), 'python interpreters checked', flush=True)
 PY
 RUN chown -R hermes:hermes /home/hermes
+COPY --chown=hermes:hermes render-config.yaml /usr/local/etc/hermes-render-config.yaml
 COPY --chown=hermes:hermes entrypoint.sh /usr/local/bin/hermes-cloud-entrypoint.sh
 COPY --chown=hermes:hermes health_server.py /usr/local/bin/hermes-health-server.py
 RUN chmod +x /usr/local/bin/hermes-cloud-entrypoint.sh
