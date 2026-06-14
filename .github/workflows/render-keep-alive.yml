@@ -14,36 +14,43 @@ concurrency:
 
 jobs:
   ping:
-    name: Ping Render health endpoint
+    name: Ping Render readiness endpoint
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 4
 
     steps:
-      - name: Ping Render health endpoint
+      - name: Wake service and wait for gateway readiness
         env:
-          RENDER_HEALTH_URL: https://hermes-cloud-agent.onrender.com/healthz
+          RENDER_BASE_URL: https://hermes-cloud-agent.onrender.com
         run: |
           set -euo pipefail
 
-          echo "Pinging ${RENDER_HEALTH_URL}"
+          echo "Waking ${RENDER_BASE_URL}"
+          curl --silent --show-error --location --max-time 45 "${RENDER_BASE_URL}/healthz" || true
 
-          http_code="$(
-            curl \
+          echo "Polling ${RENDER_BASE_URL}/readyz"
+          ready_code="000"
+          for attempt in $(seq 1 12); do
+            ready_code="$({ curl \
               --silent \
               --show-error \
               --location \
-              --max-time 45 \
-              --retry 2 \
-              --retry-delay 10 \
-              --output /tmp/render-health-body.txt \
+              --max-time 20 \
+              --output /tmp/hermes-ready-body.txt \
               --write-out "%{http_code}" \
-              "${RENDER_HEALTH_URL}"
-          )"
+              "${RENDER_BASE_URL}/readyz" || true; })"
 
-          echo "HTTP status: ${http_code}"
-          cat /tmp/render-health-body.txt || true
+            echo "Attempt ${attempt}/12 readiness HTTP status: ${ready_code}"
+            cat /tmp/hermes-ready-body.txt || true
+            echo
 
-          if [ "${http_code}" -lt 200 ] || [ "${http_code}" -ge 300 ]; then
-            echo "Render keepalive failed with HTTP ${http_code}"
-            exit 1
-          fi
+            if [ "${ready_code}" -ge 200 ] && [ "${ready_code}" -lt 300 ]; then
+              echo "Hermes gateway is ready."
+              exit 0
+            fi
+
+            sleep 10
+          done
+
+          echo "Hermes gateway readiness failed after polling. Last HTTP status: ${ready_code}"
+          exit 1
