@@ -20,7 +20,7 @@ for py in candidates:
     seen.append(py)
     try:
         print('installing telegram dependency into', py, flush=True)
-        subprocess.run([py, '-m', 'pip', 'install', 'python-telegram-bot>=21,<22'], check=False, timeout=120)
+        subprocess.run([py, '-m', 'pip', 'install', '--break-system-packages', 'python-telegram-bot>=21,<22'], check=False, timeout=180)
     except Exception as exc:
         print('skipped', py, type(exc).__name__, flush=True)
 print('telegram dependency install scan complete', len(seen), 'python interpreters checked', flush=True)
