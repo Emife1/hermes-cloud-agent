@@ -1,27 +1,17 @@
 #!/usr/bin/env python3
-from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 import os
-import signal
+import sys
 import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 
 STARTED_AT = time.time()
-HOME = os.environ.get("HOME", "/home/hermes")
-PID_FILE = os.environ.get("HERMES_GATEWAY_PID_FILE", os.path.join(HOME, ".hermes", "hermes-gateway.pid"))
+PORT = int(os.environ.get("PORT", "10000"))
+GATEWAY_PID_FILE = Path("/tmp/hermes-gateway.pid")
 
 
-def _read_gateway_pid():
-    try:
-        with open(PID_FILE, "r", encoding="utf-8") as handle:
-            value = handle.read().strip()
-        return int(value) if value else None
-    except Exception:
-        return None
-
-
-def _pid_alive(pid):
-    if not pid:
-        return False
+def process_alive(pid: int) -> bool:
     try:
         os.kill(pid, 0)
         return True
@@ -33,46 +23,108 @@ def _pid_alive(pid):
         return False
 
 
-def _status():
-    pid = _read_gateway_pid()
-    alive = _pid_alive(pid)
+def pidfile_gateway_pid():
+    try:
+        raw = GATEWAY_PID_FILE.read_text(encoding="utf-8").strip()
+        if not raw:
+            return None
+        pid = int(raw)
+        if process_alive(pid):
+            return pid
+    except Exception:
+        return None
+    return None
+
+
+def scan_gateway_pid():
+    proc = Path("/proc")
+    if not proc.exists():
+        return None
+
+    for entry in proc.iterdir():
+        if not entry.name.isdigit():
+            continue
+
+        try:
+            cmdline = (
+                (entry / "cmdline")
+                .read_bytes()
+                .replace(b"\x00", b" ")
+                .decode("utf-8", errors="ignore")
+            )
+        except Exception:
+            continue
+
+        lowered = cmdline.lower()
+        if "hermes" in lowered and "gateway" in lowered:
+            try:
+                return int(entry.name)
+            except ValueError:
+                continue
+
+    return None
+
+
+def gateway_status():
+    pid = pidfile_gateway_pid() or scan_gateway_pid()
     return {
-        "ok": True,
-        "ready": alive,
-        "service": "hermes-cloud-agent",
-        "gateway_pid": pid,
-        "gateway_alive": alive,
-        "pid_file": PID_FILE,
-        "uptime_seconds": round(time.time() - STARTED_AT, 2),
+        "running": bool(pid),
+        "pid": pid,
     }
 
 
 class Handler(BaseHTTPRequestHandler):
-    def _send_json(self, code, payload):
-        data = json.dumps(payload, sort_keys=True).encode("utf-8")
-        self.send_response(code)
-        self.send_header("content-type", "application/json")
-        self.send_header("content-length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
-
-    def do_GET(self):
-        status = _status()
-        if self.path in ("/", "/healthz"):
-            self._send_json(200, {"ok": True, "service": status["service"], "uptime_seconds": status["uptime_seconds"]})
-            return
-        if self.path == "/readyz":
-            self._send_json(200 if status["ready"] else 503, status)
-            return
-        if self.path == "/statusz":
-            self._send_json(200, status)
-            return
-        self._send_json(404, {"ok": False, "error": "not_found"})
+    server_version = "HermesHealth/1.0"
 
     def log_message(self, fmt, *args):
-        return
+        sys.stderr.write(
+            "%s - - [%s] %s\n"
+            % (self.client_address[0], self.log_date_time_string(), fmt % args)
+        )
+        sys.stderr.flush()
+
+    def send_json(self, status_code: int, payload: dict):
+        body = json.dumps(payload, sort_keys=True).encode("utf-8")
+        self.send_response(status_code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_GET(self):
+        gateway = gateway_status()
+        base = {
+            "service": "hermes-cloud-agent",
+            "ok": True,
+            "port": PORT,
+            "uptime_seconds": round(time.time() - STARTED_AT, 3),
+            "gateway": gateway,
+        }
+
+        if self.path in ("/", "/healthz"):
+            self.send_json(200, base)
+            return
+
+        if self.path == "/statusz":
+            self.send_json(200, base)
+            return
+
+        if self.path == "/readyz":
+            ready = bool(gateway["running"])
+            payload = dict(base)
+            payload["ok"] = ready
+            self.send_json(200 if ready else 503, payload)
+            return
+
+        self.send_json(404, {"ok": False, "error": "not_found", "path": self.path})
 
 
-port = int(os.environ.get("PORT", "10000"))
-print(f"Health server listening on 0.0.0.0:{port}", flush=True)
-HTTPServer(("0.0.0.0", port), Handler).serve_forever()
+def main():
+    address = ("0.0.0.0", PORT)
+    httpd = ThreadingHTTPServer(address, Handler)
+    print(f"Health server listening on 0.0.0.0:{PORT}", flush=True)
+    httpd.serve_forever()
+
+
+if __name__ == "__main__":
+    main()
