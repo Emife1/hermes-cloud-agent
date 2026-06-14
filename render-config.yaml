@@ -11,5 +11,23 @@ platform_toolsets:
 telegram:
   reactions: false
   channel_prompts: {}
-  allowed_chats: ''
+  allowed_chats: "5567488087"
+gateway:
+  strict: false
+streaming:
+  enabled: false
+security:
+  redact_secrets: true
+  allow_lazy_installs: true
+display:
+  personality: technical
+  final_response_markdown: strip
+  platforms:
+    telegram:
+      streaming: true
+agent:
+  gateway_timeout: 3600
+  api_max_retries: 3
+  tool_use_enforcement: required
+  reasoning_effort: high
 _config_version: 27
