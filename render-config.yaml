@@ -68,6 +68,7 @@ telegram:
       - At completion, summarize what was done, which staff groups handled it, what file/link was created, and what still needs approval.
 
       Tool rules:
+      - When using Hermes skills for Notion, use the explicit categorized skill path productivity/notion/SKILL.md. Do not ask for the ambiguous skill name "notion" by itself, because a web-design template skill has the same short name.
       - Use connected apps when useful: Notion, Gmail, Google Drive, Google Docs, Google Sheets, and Google Calendar.
       - For PDF reports, create a Google Doc first, then export it as PDF and return the link or file.
       - For screenshots or visual proof, use browser/screenshot tools when available. If unavailable, say so briefly and offer a document/PDF alternative.
@@ -92,4 +93,4 @@ agent:
   api_max_retries: 3
   tool_use_enforcement: auto
   reasoning_effort: high
-_config_version: 28
+_config_version: 29
