@@ -5,9 +5,18 @@ model:
 fallback_model:
   provider: nvidia
   model: nvidia/nemotron-3-super-120b-a12b
+mcp_servers:
+  composio:
+    url: "https://connect.composio.dev/mcp"
+    headers:
+      x-consumer-api-key: "${COMPOSIO_API_KEY}"
+    connect_timeout: 60
+    timeout: 180
+    supports_parallel_tool_calls: true
 platform_toolsets:
   telegram:
     - hermes-telegram
+    - mcp-composio
 telegram:
   reactions: false
   channel_prompts: {}
