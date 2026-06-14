@@ -21,7 +21,11 @@ echo "Hermes clean runtime prepared with provider=nvidia model=$MODEL_VALUE"
 python3 /usr/local/bin/hermes-health-server.py &
 HEALTH_PID="$!"
 echo "Starting Hermes gateway..."
+export HERMES_GATEWAY_PID_FILE="$HOME/.hermes/hermes-gateway.pid"
+rm -f "$HERMES_GATEWAY_PID_FILE"
 hermes gateway &
 HERMES_PID="$!"
+echo "$HERMES_PID" > "$HERMES_GATEWAY_PID_FILE"
+echo "Hermes gateway pid=$HERMES_PID"
 trap 'kill "$HEALTH_PID" "$HERMES_PID" 2>/dev/null || true' INT TERM EXIT
 wait "$HERMES_PID"
