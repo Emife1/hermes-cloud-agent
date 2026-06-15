@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hermes-cloud-agent-config
+  namespace: hermes-olufunke
+  labels:
+    app.kubernetes.io/name: hermes-cloud-agent
+data:
+  PORT: "10000"
+  HOME: /home/hermes
+  PROVIDER: nvidia
+  MODEL: openai/gpt-oss-120b
+  HERMES_PROVIDER: nvidia
+  HERMES_MODEL: openai/gpt-oss-120b
+  LOG_LEVEL: info

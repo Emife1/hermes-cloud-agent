@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hermes-olufunke
+  labels:
+    app.kubernetes.io/name: hermes-cloud-agent
+    app.kubernetes.io/part-of: hermes
+    owner: olufunke
